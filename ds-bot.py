@@ -7,6 +7,7 @@ from googletrans import Translator
 import fake_useragent
 import keep_alive
 import shutil
+import os
 
 nwords = [
   "негр", "негры", "пидр", "пидор", "хуй", "хуесос", "нахуй", "пизда",
