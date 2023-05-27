@@ -4,6 +4,7 @@ import time
 import requests
 #pip install googletrans==3.1.0a0
 from googletrans import Translator
+from discord import app_commands
 import fake_useragent
 import keep_alive
 import shutil
@@ -33,11 +34,9 @@ def AIcreate(prompt):
     "https://freeimagegenerator.com/queries/queryCreateAIImagesFromTextPrompt.php?server=1",
     data=data,
     headers=headers)
-  print(ans1.raise_for_status())
   id = ans1.text[ans1.text.find("/replicate.delivery\\/pbxt\\") +
                  27:ans1.text.find(",\"mimeType\":") - 12]
-  print(id)
-  time.sleep(10)
+  time.sleep(8)
   url = f"https://replicate.delivery/pbxt/{id}/out-0.png"
   r = requests.get(url, stream=True)
   print("generated")
@@ -49,18 +48,32 @@ def AIcreate(prompt):
 @bot.event
 async def on_ready():
   print("Online")
+  await bot.tree.sync()
 
-@bot.command(name="test")
-async def test(ctx):
-  await ctx.send(f"Привет")
-  await ctx.send(
+@bot.tree.command(name="test")
+async def test(interaction: discord.Interaction):
+  await interaction.followup.send("Привет")
+  await interaction.followup.send(
     f"https://i.pinimg.com/originals/e3/63/e3/e363e38ceffaece60e00b87ee4286e08.gif"
   )
 
-@bot.command(name="relise")
-async def test(ctx):
+@bot.tree.command(name="relise")
+async def test(self):
   channel = bot.get_channel(os.environ.get("chan_ID"))
   await channel.send("Внимание бот обновлён до новой версиии")
+
+@bot.tree.command(name="gen")
+@app_commands.describe(prompt="prompt")
+async def _gen(interaction: discord.Interaction, prompt: str):
+  await interaction.response.defer()
+  translator = Translator()
+  translated = translator.translate(prompt).text
+  try:
+    AIcreate(translated)
+    await interaction.followup.send(file=discord.File("picture.png"))
+  except Exception:
+    await interaction.followup.send("Failed")
+
 
 @bot.event
 async def on_message(message):
@@ -73,13 +86,6 @@ async def on_message(message):
         if auth == os.environ.get("bot_name"):
           continue
         await message.reply("А ТЫ НЕ АХУЕЛ МАТЕРИТЬСЯ В МОЕМ ЧАТЕ")
-  if ph[0] == "/gen":
-    prompt = " ".join(ph[1:])
-    translator = Translator()
-    translated = translator.translate(prompt).text
-    print(translated)
-    AIcreate(translated)
-    await message.channel.send(file=discord.File("picture.png"))
   await bot.process_commands(message)
 
 keep_alive.keep_alive()
